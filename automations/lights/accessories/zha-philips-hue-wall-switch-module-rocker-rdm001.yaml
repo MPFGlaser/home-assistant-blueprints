@@ -1,0 +1,62 @@
+blueprint:
+  domain: automation
+  name: Philips Hue Wall Switch Module (Single/Double Rocker)
+  author: Max Glaser
+  description: >-
+    Philips Hue Wall Switch Module (RDM001), using Zigbee Home Automation.  
+    Designed for "Single Rocker" (mode 0, port 1) or "Double Rocker" (mode 2, port 1 = left, port 2 = right).
+  input:
+    zha_device:
+      name: Philips Hue Wall Switch Module (RDM001)
+      description: List of available Philips Hue Wall Switch Modules
+      selector:
+        device:
+          integration: zha
+          model: RDM001
+          multiple: false
+    Left_Press:
+      name: Left Press
+      description: Left button pressed
+      default: []
+      selector:
+        action: {}
+    Right_Press:
+      name: Right Press
+      description: Right button pressed
+      default: []
+      selector:
+        action: {}
+mode: single
+max_exceeded: silent
+variables:
+  device_id: !input zha_device
+trigger:
+  - platform: event
+    event_type: zha_event
+condition: "{{ trigger.event.data.device_id == device_id }}"
+action:
+  - variables:
+      button: "{{ trigger.event.data.args.button }}"
+      press_type: "{{ trigger.event.data.args.press_type }}"
+      command_type: "{{ trigger.event.data.command }}"
+  - service: logbook.log
+    data:
+      name: Button
+      message: "{{ button }}"
+  - service: logbook.log
+    data:
+      name: Press Type
+      message: "{{ press_type }}"
+  - service: logbook.log
+    data:
+      name: Device
+      message: "{{ zha_device }}"
+  - service: logbook.log
+    data:
+      name: Command
+      message: "{{ command_type }}"
+  - choose:
+      - conditions: '{{ command_type == "left_press" }}'
+        sequence: !input Left_Press
+      - conditions: '{{ command_type == "right_press" }}'
+        sequence: !input Right_Press
